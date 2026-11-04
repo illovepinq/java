@@ -1,0 +1,1 @@
+public enum Category{WEAPON,ARMOR,ACCESSORY}

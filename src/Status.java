@@ -1,0 +1,1 @@
+public enum Status {ACTIVE, SOLD, CANCELLED}
