@@ -12,12 +12,12 @@ class Listing {
         this.price = price;
         this.status = Status.ACTIVE;
     }
-    public void setStatus(Status status) {
+    public void setStatus (Status status) {
         this.status = status;
     }
     public long getId() {return id;}
-    public long getItemId(){return itemId;}
-    public long getSellerId(){return sellerId;}
-    public long getPrice(){return  price;}
+    public long getItemId() {return itemId;}
+    public long getSellerId() {return sellerId;}
+    public long getPrice() {return  price;}
     public Status getStatus() {return status;}
 }

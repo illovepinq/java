@@ -1,15 +1,17 @@
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 class Marketplace {
     private final Map<Long, Player> players = new HashMap<>();
     private final Map<Long, Item> items = new HashMap<>();
     private final Map<Long, Listing> listings = new HashMap<>();
+
     public void registerPlayer(Player player) {
         if (players.containsKey(player.getId())) {
             throw new IllegalArgumentException("Игрок с таким ID уже существует!");
         }
-        players.put(player.getId(),player);
+        players.put(player.getId(), player);
     }
 
     public void addItem(Item item) {
@@ -21,12 +23,13 @@ class Marketplace {
             throw new IllegalArgumentException("Владелец с таким ID не зарегистрирован!");
         }
         owner.addItem(item);
-        items.put(item.getId(),item);
+        items.put(item.getId(), item);
     }
+
     public void createListing(long listingId, long itemId, long sellerId, long price) {
         if (price <= 0) {
             throw new IllegalArgumentException("Сумма товара должна быть больше 0!€$");
-            }
+        }
         if (listings.containsKey(listingId)) {
             throw new IllegalArgumentException("Объявление с таким ID уже существует!");
         }
@@ -49,6 +52,7 @@ class Marketplace {
         Listing listing = new Listing(listingId, itemId, sellerId, price);
         listings.put(listingId, listing);
     }
+
     public void buyItem(long listingId, long buyerId) {
         Listing listing = listings.get(listingId);
         if (listing == null) {
@@ -61,7 +65,7 @@ class Marketplace {
         if (listing.getStatus() != Status.ACTIVE) {
             throw new IllegalArgumentException("Покупка запрещена!");
         }
-        Player seller = players.get(listing.getSellerId())  ;
+        Player seller = players.get(listing.getSellerId());
         if (listing.getSellerId() == buyer.getId()) {
             throw new IllegalArgumentException("Нельзя купить собственный предмет!");
         }
@@ -85,6 +89,7 @@ class Marketplace {
         seller.removeItem(item);
         buyer.addItem(item);
     }
+
     public void cancelListing(long listingId, long sellerId) {
         Listing listing = listings.get(listingId);
         if (listing == null) {
@@ -100,6 +105,38 @@ class Marketplace {
             throw new IllegalArgumentException("Объявление было отменено!");
         }
         listing.setStatus(Status.CANCELLED);
+    }
+
+    public List<Listing> filterActiveListings(Category category, long minPrice, long maxPrice) {
+        if (minPrice < 0 || maxPrice < minPrice) {
+            throw new IllegalArgumentException("Некорректный ценовой диапазон!");
+        }
+        return listings.values().stream()
+                .filter(listing -> listing.getStatus() == Status.ACTIVE)
+                .filter(listing -> {
+                    Item item = items.get(listing.getItemId());
+                    if (item == null) {
+                        return false;
+                    }
+                    return item.getCategory() == category;
+                })
+                .filter(listing -> listing.getPrice() >= minPrice && listing.getPrice() <= maxPrice)
+                .toList();
+    }
+    public List<Listing> filterMinMaxRarity(Rarity rarity, long minPrice, long maxPrice) {
+        if (minPrice < 0 || maxPrice < minPrice) {
+            throw new IllegalArgumentException("Некорректный ценовой диапазон!");
+        }
+        return listings.values().stream()
+                .filter(listing -> listing.getStatus() == Status.ACTIVE)
+                .filter(listing -> {
+                    Item item = items.get(listing.getItemId());
+                    if (item == null) {
+                        return false;
+                    }
+                    return item.getRarity() == rarity;
+                    })
+                .toList();
     }
 }
 
