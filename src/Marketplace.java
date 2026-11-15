@@ -33,6 +33,9 @@ class Marketplace {
             throw new IllegalArgumentException("Объявление с таким ID уже существует!");
         }
         Player seller = players.get(sellerId);
+        if (seller == null) {
+            throw new IllegalArgumentException("Продавец не зарегистрирован!");
+        }
         Item item = items.get(itemId);
         if (item == null) {
             throw new IllegalArgumentException("Предмет с таким ID не найден!");
@@ -75,9 +78,7 @@ class Marketplace {
         if (buyer.getBalance() < listing.getPrice()) {
             throw new IllegalArgumentException("Недостаточно средств для покупки предмета!");
         }
-        if (seller == null) {
-            throw new IllegalArgumentException("Продавец не зарегистрирован!");
-        }
+
         buyer.withdraw(listing.getPrice());
         seller.deposit(listing.getPrice());
         listing.setStatus(Status.SOLD);
@@ -140,7 +141,9 @@ class Marketplace {
     public List<Listing> filterFiveMostExpensiveCategories() {
         return listings.values().stream()
                 .filter(listing -> listing.getStatus() == Status.ACTIVE)
-                .sorted(Comparator.comparingLong(Listing::getPrice).reversed())
+                .sorted(Comparator.comparingLong(Listing::getPrice)
+                        .reversed()
+                        .thenComparingLong(Listing::getId))
                 .limit(5)
                 .toList();
     }
@@ -155,7 +158,8 @@ class Marketplace {
     public List<Listing> sortActiveListingsByPrice() {
         return listings.values().stream()
                 .filter(listing -> listing.getStatus() == Status.ACTIVE)
-                .sorted(Comparator.comparingLong(Listing::getPrice))
+                .sorted(Comparator.comparingLong(Listing::getPrice)
+                        .thenComparingLong(Listing::getId))
                 .toList();
     }
     public List<Listing> sortActiveListingsByRarity() {
@@ -163,7 +167,7 @@ class Marketplace {
                 .filter(listing -> listing.getStatus() == Status.ACTIVE)
                 .sorted(Comparator.comparing(
                         (Listing listing) -> items.get(listing.getItemId()).getRarity()
-                ).reversed())
+                ).reversed().thenComparing(Listing::getId))
                 .toList();
     }
     public Optional<Player> findTopSeller() {

@@ -45,10 +45,10 @@ class Player {
         if (amount <= 0) {
             throw new IllegalArgumentException("Сумма списания должна быть больше 0€$");
         }
-        this.balance -= amount;
         if (this.balance < amount) {
             throw new IllegalArgumentException("У вас недостаточно средств для покупки товара!");
         }
+        this.balance -= amount;
     }
     public void removeItem(Item item) {
         this.item.remove(item);
