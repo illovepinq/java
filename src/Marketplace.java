@@ -1,6 +1,5 @@
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 class Marketplace {
     private final Map<Long, Player> players = new HashMap<>();
@@ -34,9 +33,6 @@ class Marketplace {
             throw new IllegalArgumentException("Объявление с таким ID уже существует!");
         }
         Player seller = players.get(sellerId);
-        if (seller == null) {
-            throw new IllegalArgumentException("Продавец не зарегистрирован!");
-        }
         Item item = items.get(itemId);
         if (item == null) {
             throw new IllegalArgumentException("Предмет с таким ID не найден!");
@@ -79,8 +75,8 @@ class Marketplace {
         if (buyer.getBalance() < listing.getPrice()) {
             throw new IllegalArgumentException("Недостаточно средств для покупки предмета!");
         }
-        if (seller != null) {
-            throw new IllegalArgumentException("Продавца не существует!");
+        if (seller == null) {
+            throw new IllegalArgumentException("Продавец не зарегистрирован!");
         }
         buyer.withdraw(listing.getPrice());
         seller.deposit(listing.getPrice());
@@ -123,11 +119,13 @@ class Marketplace {
                 .filter(listing -> listing.getPrice() >= minPrice && listing.getPrice() <= maxPrice)
                 .toList();
     }
+
     public List<Listing> filterMinMaxRarity(Rarity rarity, long minPrice, long maxPrice) {
         if (minPrice < 0 || maxPrice < minPrice) {
             throw new IllegalArgumentException("Некорректный ценовой диапазон!");
         }
         return listings.values().stream()
+                .filter(listing -> listing.getPrice() >= minPrice && listing.getPrice() <= maxPrice)
                 .filter(listing -> listing.getStatus() == Status.ACTIVE)
                 .filter(listing -> {
                     Item item = items.get(listing.getItemId());
@@ -135,8 +133,55 @@ class Marketplace {
                         return false;
                     }
                     return item.getRarity() == rarity;
-                    })
+                })
                 .toList();
     }
-}
 
+    public List<Listing> filterFiveMostExpensiveCategories() {
+        return listings.values().stream()
+                .filter(listing -> listing.getStatus() == Status.ACTIVE)
+                .sorted(Comparator.comparingLong(Listing::getPrice).reversed())
+                .limit(5)
+                .toList();
+    }
+    public Map<Category, List<Listing>> groupActiveListingsByCategory() {
+        return listings.values().stream()
+                .filter(listing -> listing.getStatus() == Status.ACTIVE)
+                .collect(Collectors.groupingBy(listing -> {
+                    Item item = items.get(listing.getItemId());
+                    return item.getCategory();
+                }));
+    }
+    public List<Listing> sortActiveListingsByPrice() {
+        return listings.values().stream()
+                .filter(listing -> listing.getStatus() == Status.ACTIVE)
+                .sorted(Comparator.comparingLong(Listing::getPrice))
+                .toList();
+    }
+    public List<Listing> sortActiveListingsByRarity() {
+        return listings.values().stream()
+                .filter(listing -> listing.getStatus() == Status.ACTIVE)
+                .sorted(Comparator.comparing(
+                        (Listing listing) -> items.get(listing.getItemId()).getRarity()
+                ).reversed())
+                .toList();
+    }
+    public Optional<Player> findTopSeller() {
+        return listings.values().stream()
+                .filter(listing -> listing.getStatus() == Status.SOLD)
+                .collect(Collectors.groupingBy(Listing::getSellerId))
+                .entrySet().stream()
+                .max(Comparator
+                        .<Map.Entry<Long, List<Listing>>>comparingLong(entry ->
+                                entry.getValue().stream()
+                                        .mapToLong(Listing::getPrice)
+                                        .sum()
+                        )
+                        .thenComparing(
+                                Map.Entry::getKey,
+                                Comparator.reverseOrder()
+                        )
+                )
+                .map(entry -> players.get(entry.getKey()));
+    }
+}
